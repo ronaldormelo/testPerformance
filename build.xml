@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="G2_desempenho" default="build">
+    
+    <property name="jmeterDir" value="${basedir}/build/tools/apache-jmeter-2.11"/>
+    <property name="desempenhoBuildDir" value="${basedir}/build/logs"/>
+    <property name="desempenhoTestDir" value="${basedir}/tests"/>
+    
+    <path id="xslt.classpath">
+        <fileset dir="${jmeterDir}/lib" includes="xalan*.jar"/>
+        <fileset dir="${jmeterDir}/lib" includes="serializer*.jar"/>
+    </path>
+    
+    <condition property="funcMode">
+        <equals arg1="${show-data}" arg2="y"/>
+    </condition>
+    
+    <condition property="funcMode" value="false">
+        <not>
+            <equals arg1="${show-data}" arg2="y"/>
+        </not>
+    </condition>
+
+    <!-- By default, we assume all tools to be on the $PATH -->        
+    <target name="build" 
+            depends="prepare,tests,reports,graphsRunTransactionsPerSecond,graphsResponseTimesDistribution,graphsThreadsStateOverTime,graphsHitsPerSecond"
+            description=""/>
+
+    <target name="prepare"
+            unless="prepare.done"
+            description="Prepara diretórios para build">
+
+        <!--Seta as permissões nas pastas -->
+        <chmod dir="${basedir}/build/logs" perm="0777"/>
+        
+        <property name="prepare.done" value="true"/>
+    </target>
+		 	 	
+    <!-- JMeter Tests -->	
+    <target name="tests" description="Executa os testes de desempenho">
+        
+        <exec executable="${jmeterDir}/bin/jmeter.sh" failonerror="false">
+            <arg line="-J jmeter.save.saveservice.output_format=xml -n -t ${desempenhoTestDir}/XXXX.jmx -l ${desempenhoBuildDir}/XXXXX.jtl"/>
+        </exec>
+        
+        <!-- ... -->
+        <!-- Adicionar execução de outros scripts de test -->
+        
+    </target>
+    
+    <!-- JMeter Relatório -->
+    <target name="reports" depends="tests" description="Gera relatório html">
+        
+        <xslt
+            classpathref="xslt.classpath"
+            force="true"
+            in="${desempenhoBuildDir}/XXXX.jtl"
+            out="${desempenhoBuildDir}/XXXX.html"
+            style="${jmeterDir}/extras/jmeter-results-detail-report_21.xsl">
+            <param name="showData" expression="${show-data}"/>
+        </xslt>
+        
+        <!-- ... -->
+        <!-- Adicionar a geração relatórios de outros scripts de test aqui -->
+        
+        
+    </target>
+ 
+    <!-- JMeter Graph TransactionsPerSecond -->
+    <target name="graphsRunTransactionsPerSecond" depends="tests" description="Gera Grafico de Transacoes por Segundo"> 
+
+        <exec executable="/usr/lib/jvm/java-8-oracle/jre/bin/java" failonerror="false">
+            <arg line="-jar ${jmeterDir}/lib/ext/CMDRunner.jar --tool Reporter --generate-png ${desempenhoBuildDir}/XXXXGTPS.png --input-jtl ${desempenhoBuildDir}/XXXX.jtl --plugin-type TransactionsPerSecond"/> 
+        </exec>
+        
+        <!-- ... -->
+        <!-- Adicionar geração de graficos de outros scripts de test -->
+    
+    </target>
+    
+    <!-- JMeter Graph ResponseTimesDistribution -->
+    <target name="graphsResponseTimesDistribution" depends="tests" description="Gera Grafico de Distribuicao por Tempo de Resposta"> 
+
+        <exec executable="/usr/lib/jvm/java-8-oracle/jre/bin/java" failonerror="false">
+            <arg line="-jar ${jmeterDir}/lib/ext/CMDRunner.jar --tool Reporter --generate-png ${desempenhoBuildDir}/XXXXGRTD.png --input-jtl ${desempenhoBuildDir}/XXXX.jtl --plugin-type ResponseTimesDistribution"/> 
+        </exec>
+        
+        <!-- ... -->
+        <!-- Adicionar geração de graficos de outros scripts de test -->
+    
+    </target>
+ 
+    <!-- JMeter Graph ThreadsStateOverTime -->
+    <target name="graphsThreadsStateOverTime" depends="tests" description="Gera Grafico de Threads Ativas"> 
+
+        <exec executable="/usr/lib/jvm/java-8-oracle/jre/bin/java" failonerror="false">
+            <arg line="-jar ${jmeterDir}/lib/ext/CMDRunner.jar --tool Reporter --generate-png ${desempenhoBuildDir}/XXXXGTSOT.png --input-jtl ${desempenhoBuildDir}/XXXX.jtl --plugin-type ThreadsStateOverTime"/> 
+        </exec>
+        
+        <!-- ... -->
+        <!-- Adicionar geração de graficos de outros scripts de test -->
+    
+    </target>
+ 
+    <!-- JMeter Graph HitsPerSecond -->
+    <target name="graphsHitsPerSecond" depends="tests" description="Gera Grafico de Hits por Segundo"> 
+
+        <exec executable="/usr/lib/jvm/java-8-oracle/jre/bin/java" failonerror="false">
+            <arg line="-jar ${jmeterDir}/lib/ext/CMDRunner.jar --tool Reporter --generate-png ${desempenhoBuildDir}/XXXXGHPS.png --input-jtl ${desempenhoBuildDir}/XXXX.jtl --plugin-type HitsPerSecond"/> 
+        </exec>
+        
+        <!-- ... -->
+        <!-- Adicionar geração de graficos de outros scripts de test -->
+    
+    </target>
+ 
+ 
+    <target name="in-case-of-success" if="buildsuccess">
+        <echo>Build OK</echo>
+    </target>
+	
+    <target name="in-case-of-failure" if="buildfailed">
+        <fail>Build Fail</fail>
+    </target>
+ 
+</project>
